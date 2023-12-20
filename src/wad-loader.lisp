@@ -99,3 +99,18 @@
 	      wad-types::floorflat
 	      wad-types::ceilingflat
 	      wad-types::lightlevel))))
+
+(defun print-linedefs (linedefs)
+  (dolist (l linedefs)
+    (with-slots (wad-types::v1
+		 wad-types::v2
+		 wad-types::tag
+		 wad-types::sidenum1
+		 wad-types::sidenum2) l
+      (format t "v1: ~5a v2: ~5a tag: ~5a s1: ~5a s2: ~5a~%"
+	      wad-types::v1
+	      wad-types::v2
+	      wad-types::tag
+	      wad-types::sidenum1
+	      wad-types::sidenum2))))
+		 
