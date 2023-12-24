@@ -11,6 +11,8 @@
     :to-vector
     :intersection-2d))
 
+(in-package :math-defs)
+
 (defun cross-product-line (a b)
   (- (* (nth 0 a) (nth 1 b)) (* (nth 1 a) (nth 0 b))))
 
