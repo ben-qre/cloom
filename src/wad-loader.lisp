@@ -1,7 +1,7 @@
 (defpackage :wad-loader
   (:use :common-lisp :binary-reader :wad-types)
-  (:export :wad-reader :wad-reader-init
-	   :get-things :get-linedefs :get-vertexes :get-sectors
+  (:export :wad-reader :wad-reader-init :get-map-data
+	   :get-things :get-linedefs :get-vertexes :get-segs :get-ssectors :get-nodes :get-sectors
 	   :get-lump-index))
 
 (in-package :wad-loader)
@@ -83,11 +83,28 @@
 				       :element-type ,element-type
 				       :sizeof-element ,sizeof-element))))
 
-(define-get-map-lump get-things   "THINGS"   'thing   10)
-(define-get-map-lump get-linedefs "LINEDEFS" 'linedef 14)  
-(define-get-map-lump get-vertexes "VERTEXES" 'vertex   4)
-(define-get-map-lump get-sectors  "SECTORS"  'sector  26)
+(define-get-map-lump get-things   "THINGS"   'thing     10)
+(define-get-map-lump get-linedefs "LINEDEFS" 'linedef   14)  
+(define-get-map-lump get-vertexes "VERTEXES" 'vertex     4)
+(define-get-map-lump get-segs     "SEGS"     'seg       12)
+(define-get-map-lump get-ssectors "SSECTORS" 'subsector  4)
+(define-get-map-lump get-nodes    "NODES"    'node      28)
+(define-get-map-lump get-sectors  "SECTORS"  'sector    26)
 
+(defmacro set-map-slot (slot-name get-function)
+  `(setf (slot-value map ',slot-name) (,get-function wad-reader map-index)))
+
+(defmethod get-map-data (wad-reader map-index)
+  (let ((map (make-instance 'map-data)))
+    (set-map-slot wad-types::things   get-things)
+    (set-map-slot wad-types::linedefs get-linedefs)
+    (set-map-slot wad-types::vertexes get-vertexes)
+    (set-map-slot wad-types::segs     get-segs)
+    (set-map-slot wad-types::ssectors get-ssectors)
+    (set-map-slot wad-types::nodes    get-nodes)
+    (set-map-slot wad-types::sectors  get-sectors)
+    map))
+     
 (defun print-sectors (sectors)
   (dolist (s sectors)
     (with-slots (wad-types::floorheight
