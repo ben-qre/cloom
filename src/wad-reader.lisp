@@ -1,10 +1,10 @@
-(defpackage :wad-loader
+(defpackage :wad-reader
   (:use :common-lisp :binary-reader :wad-types)
-  (:export :wad-reader :wad-reader-init :get-map-data
+  (:export :wad-reader :wad-reader-init :get-map-data :wad-reader-close
 	   :get-things :get-linedefs :get-vertexes :get-segs :get-ssectors :get-nodes :get-sectors
 	   :get-lump-index))
 
-(in-package :wad-loader)
+(in-package :wad-reader)
 
 
 (defclass wad-reader ()
@@ -48,12 +48,19 @@
     (read-directory reader)
     reader))
 
+<<<<<<< HEAD
+(defmethod wad-reader-close (wad-reader)
+  (close (file wad-reader)))
+
+
+=======
 #|
 (defmethod get-lump ((reader wad-reader) lump-name)
   (dolist (lump (wad-directory reader))
     (if (string= (name lump) lump-name)
 	(return lump))))
 |#
+>>>>>>> origin/main
 (defmethod get-lump-index ((reader wad-reader) lump-name)
   (with-slots (directory numlumps) reader
     (loop for lump in directory
@@ -90,6 +97,10 @@
 (define-get-map-lump get-ssectors "SSECTORS" 'subsector  4)
 (define-get-map-lump get-nodes    "NODES"    'node      28)
 (define-get-map-lump get-sectors  "SECTORS"  'sector    26)
+<<<<<<< HEAD
+     
+
+=======
 
 (defmacro set-map-slot (slot-name get-function)
   `(setf (slot-value map ',slot-name) (,get-function wad-reader map-index)))
@@ -105,6 +116,7 @@
     (set-map-slot wad-types::sectors  get-sectors)
     map))
      
+>>>>>>> origin/main
 (defun print-sectors (sectors)
   (dolist (s sectors)
     (with-slots (wad-types::floorheight

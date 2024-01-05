@@ -1,13 +1,19 @@
 (defpackage :wad-types
   (:use :common-lisp :binary-reader)
   (:export :*map-lumps* :int16 :uint8 :uint16 :uint32 :ascii-string :binary-element-list :bbox
-	   :wadinfo :filelump :map-data :thing :linedef :vertex :seg :subsector :node :sector))
+	   :wadinfo :filelump :map-data :thing :linedef :vertex :seg :subsector :node :sector
+	   :linedef-flag))
 
 (in-package :wad-types)
 
 
 (defvar *map-lumps* (list "THINGS" "LINEDEFS" "SIDEDEFS" "VERTEXES" "SEGS"
 			  "SSECTORS" "NODES" "SECTORS" "REJECT" "BLOCKMAP"))
+
+(defvar *linedef-flags* (list "BLOCKING" "BLOCK_MONSTERS" "TWO_SIDED" "DONT_PEG_TOP"
+			      "DONT_PEG_BOTTOM" "SECRET" "SOUND_BLOCK" "DONT_DRAW" "MAPPED"))
+
+(define-binary-type empty in ())
 
 (define-binary-type generic-int in (bytes unsigned)
   (let ((value 0))
@@ -84,12 +90,15 @@
    (y (int16))))
 
 (define-binary-element-class seg
-  ((v1    (int16))
-   (v2    (int16))
+  ((v1-id (int16))
+   (v2-id (int16))
    (angle (int16))
    (l-id  (int16))
    (dirct (int16))
-   (offs  (int16))))
+   (offs  (int16))
+   (v1    (empty))
+   (v2    (empty))
+   (ldef  (empty))))
 
 (define-binary-element-class subsector
   ((seg-count (uint16))
@@ -113,3 +122,9 @@
    (lightlevel    (int16))
    (s-type        (int16))
    (tag           (int16))))
+
+
+(defmacro linedef-flag (flag return-value)
+  (case return-value
+    (:id   (expt 2 (position flag *linedef-flags* :test #'string=)))
+    (:name (nth (truncate (log flag 2)) *linedef-flags*))))
