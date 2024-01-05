@@ -1,7 +1,7 @@
 (defpackage :wad-types
   (:use :common-lisp :binary-reader)
-  (:export :*map-lumps* :int16 :uint8 :uint16 :uint32 :ascii-string :binary-element-list
-	   :wadinfo :filelump :thing :linedef :sector :vertex))
+  (:export :*map-lumps* :int16 :uint8 :uint16 :uint32 :ascii-string :binary-element-list :bbox
+	   :wadinfo :filelump :map-data :thing :linedef :vertex :seg :subsector :node :sector))
 
 (in-package :wad-types)
 
@@ -35,6 +35,13 @@
 	(if (not (zerop code))
 	    (write-char (code-char code) s))))))
 
+(define-binary-element-class bbox
+  ((yu (int16))
+   (yl (int16))
+   (xl (int16))
+   (xu (int16))))
+
+
 (define-binary-element-class wadinfo
   ((identification (ascii-string :length 4))
    (numlumps       (uint32))
@@ -44,6 +51,17 @@
   ((filepos (uint32))
    (size    (uint32))
    (name    (ascii-string :length 8))))
+
+
+(defclass map-data ()
+  ((things   :accessor things)
+   (linedefs :accessor linedefs)
+   (vertexes :accessor vertexes)
+   (segs     :accessor segs)
+   (ssectors :accessor ssectors)
+   (nodes    :accessor nodes)
+   (sectors  :accessor sectors)))
+
 
 (define-binary-element-class thing
   ((x      (int16))
@@ -61,6 +79,32 @@
    (sidenum1  (int16))
    (sidenum2  (int16))))
 
+(define-binary-element-class vertex
+  ((x (int16))
+   (y (int16))))
+
+(define-binary-element-class seg
+  ((v1    (int16))
+   (v2    (int16))
+   (angle (int16))
+   (l-id  (int16))
+   (dirct (int16))
+   (offs  (int16))))
+
+(define-binary-element-class subsector
+  ((seg-count (uint16))
+   (first-seg (uint16))))
+
+(define-binary-element-class node
+  ((x      (int16))
+   (y      (int16))
+   (dx     (int16))
+   (dy     (int16))
+   (rbox   (bbox))
+   (lbox   (bbox))
+   (rchild (int16))
+   (lchild (int16))))
+
 (define-binary-element-class sector
   ((floorheight   (int16))
    (ceilingheight (int16))
@@ -69,7 +113,3 @@
    (lightlevel    (int16))
    (s-type        (int16))
    (tag           (int16))))
-
-(define-binary-element-class vertex
-  ((x (int16))
-   (y (int16))))
