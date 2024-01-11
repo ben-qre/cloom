@@ -3,13 +3,13 @@
   :version "1.2"
   :author "ben & simon"
   :serial t
-  :components ((:file "settings")
-  	       (:file "binary-reader")
-	       (:file "wad-types")
-	       (:file "wad-reader")
-	       (:file "map-data")
-	       (:file "angle")
-	       (:file "classes")
-	       (:file "player")
-	       (:file "bsp")
-	       (:file "main")))
+  :components ((:file "src/settings")
+  	       (:file "src/binary-reader")
+	       (:file "src/wad-types")
+	       (:file "src/wad-reader")
+	       (:file "src/map-data")
+	       (:file "src/angle")
+	       (:file "src/classes")
+	       (:file "src/player")
+	       (:file "src/bsp")
+	       (:file "src/main")))
