@@ -1,7 +1,7 @@
 (defpackage :wad-reader
   (:use :common-lisp :binary-reader :wad-types)
   (:export :wad-reader :wad-reader-init :get-map-data :wad-reader-close
-	   :get-things :get-linedefs :get-vertexes :get-segs :get-ssectors :get-nodes :get-sectors
+	   :get-things :get-linedefs :get-sidedefs :get-vertexes :get-segs :get-ssectors :get-nodes :get-sectors
 	   :get-lump-index))
 
 (in-package :wad-reader)
@@ -83,6 +83,7 @@
 
 (define-get-map-lump get-things   "THINGS"   'thing     10)
 (define-get-map-lump get-linedefs "LINEDEFS" 'linedef   14)  
+(define-get-map-lump get-sidedefs "SIDEDEFS" 'sidedef   30)  
 (define-get-map-lump get-vertexes "VERTEXES" 'vertex     4)
 (define-get-map-lump get-segs     "SEGS"     'seg       12)
 (define-get-map-lump get-ssectors "SSECTORS" 'subsector  4)
