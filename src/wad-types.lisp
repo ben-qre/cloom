@@ -1,7 +1,8 @@
 (defpackage :wad-types
   (:use :common-lisp :binary-reader)
   (:export :*map-lumps* :int16 :uint8 :uint16 :uint32 :ascii-string :binary-element-list :bbox
-	   :wadinfo :filelump :map-data :thing :linedef :vertex :seg :subsector :node :sector
+	   :wadinfo :filelump :map-data
+           :thing :linedef :sidedef :vertex :seg :subsector :node :sector
 	   :linedef-flag))
 
 (in-package :wad-types)
@@ -59,16 +60,6 @@
    (name    (ascii-string :length 8))))
 
 
-(defclass map-data ()
-  ((things   :accessor things)
-   (linedefs :accessor linedefs)
-   (vertexes :accessor vertexes)
-   (segs     :accessor segs)
-   (ssectors :accessor ssectors)
-   (nodes    :accessor nodes)
-   (sectors  :accessor sectors)))
-
-
 (define-binary-element-class thing
   ((x      (int16))
    (y      (int16))
@@ -79,11 +70,22 @@
 (define-binary-element-class linedef
   ((v1       (uint16))
    (v2       (uint16))
-   (flags     (int16))
+   (flags    (uint16))
    (special_t (int16))
    (tag       (int16))
-   (sidenum1  (int16))
-   (sidenum2  (int16))))
+   (side-id1 (uint16))
+   (side-id2 (uint16))
+   (frontside (empty))
+   (backside  (empty))))
+
+(define-binary-element-class sidedef
+  ((xoffs  (int16))
+   (yoffs  (int16))
+   (upper  (ascii-string :length 8))
+   (lower  (ascii-string :length 8))
+   (middle (ascii-string :length 8))
+   (sec-id (int16))
+   (sector (empty))))
 
 (define-binary-element-class vertex
   ((x (int16))
