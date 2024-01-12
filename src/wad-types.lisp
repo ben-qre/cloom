@@ -32,7 +32,7 @@
 (define-binary-type binary-element-list in (length (element-type 'uint8))
   (let ((list '()))
     (dotimes (i length)
-      (setf list (cons (read-value element-type in) list)))wad-types::flags 
+      (setf list (cons (read-value element-type in) list))) 
     (setf list (nreverse list))))
 
 (define-binary-type ascii-string in (length)
