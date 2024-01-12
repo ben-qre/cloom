@@ -48,14 +48,41 @@
       (with-slots (wad-types::sec-id wad-types::sector) sidedef
 	(setf wad-types::sector (nth wad-types::sec-id sectors))))))
 
+(defun bams-to-degrees (binary-angle)
+  (let ((angle (* (ash binary-angle 16) 8.38190317e-8)))
+    (if (< angle 0)
+	(+ angle 360)
+	angle)))
+
 (defmethod update-segs (map-data)
   (with-slots (linedefs vertexes segs) map-data
     (dolist (seg segs)
-      (with-slots (wad-types::v1-id wad-types::v2-id wad-types::l-id
+      ; dereference ids
+      (with-slots (wad-types::v1-id wad-types::v2-id wad-types::line-id
 		   wad-types::v1    wad-types::v2    wad-types::ldef) seg
-	(setf wad-types::v1   (nth wad-types::v1-id vertexes))
-	(setf wad-types::v2   (nth wad-types::v2-id vertexes))
-	(setf wad-types::ldef (nth wad-types::l-id  linedefs))))))
+	(setf wad-types::v1   (nth wad-types::v1-id   vertexes))
+	(setf wad-types::v2   (nth wad-types::v2-id   vertexes))
+	(setf wad-types::ldef (nth wad-types::line-id linedefs)))
+      
+      ; add frontside-/backside-sector to segment
+      (with-slots (wad-types::directn wad-types::fsector wad-types::bsector wad-types::ldef) seg
+	(let ((front-sidedef)
+	      (back-sidedef))
+	  (with-slots (wad-types::frontside wad-types::backside) wad-types::ldef
+	    (if (not (= 0 wad-types::directn))
+		(progn (setf front-sidedef wad-types::backside)
+		       (setf back-sidedef  wad-types::frontside))
+		(progn (setf front-sidedef wad-types::frontside)
+		       (setf back-sidedef  wad-types::backside))))
+
+	  (setf wad-types::fsector (slot-value front-sidedef 'wad-types::sector))
+	  (if (string= "TWO_SIDED" (wad-types:linedef-flag (slot-value wad-types::ldef 'wad-types::flags) :name))
+	      (setf wad-types::bsector (slot-value back-sidedef 'wad-types::sector))
+	      (setf wad-types::bsector nil))))
+
+      ; BAMS to degrees
+      (with-slots (wad-types::angle) seg
+	(setf wad-types::angle (bams-to-degrees wad-types::angle))))))
 
 (defmethod update-data (map-data)
   (update-linedefs map-data)

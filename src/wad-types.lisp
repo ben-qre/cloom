@@ -32,7 +32,7 @@
 (define-binary-type binary-element-list in (length (element-type 'uint8))
   (let ((list '()))
     (dotimes (i length)
-      (setf list (cons (read-value element-type in) list)))
+      (setf list (cons (read-value element-type in) list)))wad-types::flags 
     (setf list (nreverse list))))
 
 (define-binary-type ascii-string in (length)
@@ -92,15 +92,17 @@
    (y (int16))))
 
 (define-binary-element-class seg
-  ((v1-id (int16))
-   (v2-id (int16))
-   (angle (int16))
-   (l-id  (int16))
-   (dirct (int16))
-   (offs  (int16))
-   (v1    (empty))
-   (v2    (empty))
-   (ldef  (empty))))
+  ((v1-id   (int16))
+   (v2-id   (int16))
+   (angle   (int16))
+   (line-id (int16))
+   (directn (int16))
+   (offs    (int16))
+   (v1      (empty))
+   (v2      (empty))
+   (ldef    (empty))
+   (fsector (empty))
+   (bsector (empty))))
 
 (define-binary-element-class subsector
   ((seg-count (uint16))
@@ -128,5 +130,5 @@
 
 (defmacro linedef-flag (flag return-value)
   (case return-value
-    (:id   (expt 2 (position flag *linedef-flags* :test #'string=)))
-    (:name (nth (truncate (log flag 2)) *linedef-flags*))))
+    (:id   `(expt 2 (position ,flag *linedef-flags* :test #'string=)))
+    (:name `(nth (truncate (log ,flag 2)) *linedef-flags*))))
