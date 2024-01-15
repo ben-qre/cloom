@@ -2,7 +2,7 @@
 (defpackage :angle
   (:use :cl)
   (:export :make-angle :angle-value
-	   :angle- :angle+ :angle= :angle< :angle<= :angle> :angle>= :-angle :angle+= :angle-= ))
+	   :angle- :angle+ :angle= :angle< :angle<= :angle> :angle>= :-angle :angle+= :angle-= :angle/ :angle*))
 
 (in-package :angle)
 

@@ -16,5 +16,6 @@
 (defmethod engine-init (engine)
   (setf (slot-value engine 'player) (player::make-player engine))
   (setf (slot-value engine 'bsp) (bsp::make-bsp engine))
+  (setf (slot-value engine 'seghandler) (seghandler::make-seghandler engine))
   engine)
   

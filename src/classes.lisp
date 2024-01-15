@@ -11,6 +11,7 @@
    (nodes           :accessor nodes           :initarg :nodes)
    (ssectors        :accessor ssectors        :initarg :ssectors)
    (segs            :accessor segs            :initarg :segs)
+   (is-traverse     :accessor is-traverse     :initarg :is-traverse :initform t)
    (root-node-id    :accessor root-node-id)))
 
 (defpackage :player
@@ -23,7 +24,24 @@
    (x       :initarg :x         :accessor x)
    (y       :initarg :y         :accessor y)
    (rot     :initarg :rot-speed :accessor rot-speed)
-   (angle   :initarg :angle     :accessor angle)))
+   (angle   :initarg :angle     :accessor angle)
+   (height                      :accessor height :initform PLAYER_HEIGHT)))
+
+(defpackage :seghandler
+  (:use :common-lisp :settings :angle))
+
+(in-package :seghandler)
+
+(defclass seghandler ()
+  ((engine          :accessor engine          :initarg :engine)
+   (map-data        :accessor map-data        :initarg :map-data)
+   (player          :accessor player          :initarg :player)
+   (seg             :accessor seg             :initform nil)
+   (rw-angle1       :accessor rw-angle1       :initform nil)
+   (screen-range    :accessor screen-range    :initform nil)
+   (angles          :accessor angles          :initarg :angles :initform '())
+   (upper-clip      :accessor upper-clip      :initform '())
+   (lower-clip      :accessor lower-clip      :initform '())))
 
 
 (defpackage :engine
@@ -33,8 +51,9 @@
 
 (defclass CloomEngine ()
   ((engine-map-data :accessor engine-map-data :initarg :engine-map-data)
-   (player    :accessor player   :initarg :player)
-   (bsp       :accessor bsp      :initarg :bsp)))
+   (player     :accessor player     :initarg :player)
+   (bsp        :accessor bsp        :initarg :bsp)
+   (seghandler :accessor seghandler :initarg :seghandler)))
 
 (in-package :bsp)
 
@@ -58,6 +77,26 @@
                    :y (wad-types::y start-info)
                    :rot-speed PLAYER_ROT_SPEED
                    :angle (angle::make-angle (wad-types::angle start-info)))))
+
+(in-package :seghandler)
+
+(defun make-angle-table ()
+  (let ((table '()))
+    (dotimes (i (+ SCREEN_WIDTH 1) table)
+      (push (make-angle (* (atan (/ (- HALF_WIDTH i) SCREEN_DIST)) (/ 180 PI))) table))
+    (nreverse table)))
+      
+
+(defun make-seghandler (engine)
+  (let ((seghandler (make-instance 'seghandler
+				   :engine engine
+				   :map-data (engine::engine-map-data engine)
+				   :player (engine::player engine)
+				   :angles (make-angle-table))))
+    seghandler))
+				   
+				   
+				   
 
 (in-package :engine)
 

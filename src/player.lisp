@@ -4,7 +4,7 @@
 
 (in-package :player)
 
-#|
+#| from classes.lisp
 (defclass player ()
   ((engine  :initarg :engine    :accessor engine)
    (x       :initarg :x         :accessor x)

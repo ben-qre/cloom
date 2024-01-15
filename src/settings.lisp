@@ -6,13 +6,14 @@
 
 (defpackage :settings
   (:use :cl)
-  (:export :PLAYER_ROT_SPEED :FOV :HALF_FOV :SCREEN_HEIGHT :SCREEN_WIDTH :SCREEN_DIST :HALF_HEIGHT :HALF_WIDTH))
+  (:export :PLAYER_ROT_SPEED :FOV :HALF_FOV :SCREEN_HEIGHT :SCREEN_WIDTH :SCREEN_DIST :HALF_HEIGHT :HALF_WIDTH :MIN_SCALE :MAX_SCALE :PLAYER_HEIGHT))
 
 (in-package :settings)
 
 
 
 (defconstant PLAYER_ROT_SPEED 0.12)
+(defconstant PLAYER_HEIGHT 35)
 
 (defconstant FOV 90.0)
 (defconstant HALF_FOV (/ FOV 2))
@@ -22,6 +23,10 @@
 (defparameter SCREEN_WIDTH 800)
 (defparameter HALF_WIDTH 400)
 (defparameter SCREEN_DIST (/ HALF_WIDTH (* pi (/ HALF_FOV 180.0))))
+
+
+(defparameter MIN_SCALE 0.00390625)
+(defparameter MAX_SCALE 64.0)
 
 #|
 (defun update ()

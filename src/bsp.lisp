@@ -23,11 +23,21 @@
     bsp))
 |#
 
+(defmethod update (bsp)
+  (setf (is-traverse bsp) t)
+  (load-bsp bsp)
+  )
+
 (defun angle-to-coordinate (angle)
-  (if (angle> angle 0)
-      (let ((x (- SCREEN_DIST (* (tan (* pi (/ angle 180.0))) HALF_WIDTH))))
-        (truncate x))
-      (let ((x (+ SCREEN_DIST (* (- (tan (* pi (/ angle 180.0)))) HALF_WIDTH))))
+  (format t "angle to coordinate: ~a~%" angle)
+  (if (angle> angle 0.0)
+      (progn 
+      (format t "true~%")
+      (let ((x (- SCREEN_DIST (* (tan (* pi (/ (angle-value angle) 180.0))) HALF_WIDTH))))
+	(format t "returning ~a~%" x)
+        (truncate x)))
+      (let ((x (+ SCREEN_DIST (* (- (tan (* pi (/ (angle-value angle) 180.0)))) HALF_WIDTH))))
+	(format t "returning ~a~%" x)
         (truncate x))))
 
 (defun angle-player-to-point (player-instance vertex)
@@ -37,31 +47,32 @@
 
 
 (defun is-in-fov (player-instance vertex1 vertex2)
+  (format t "checking if in fov~%")
   (let* ((angle1 (angle-player-to-point player-instance vertex1))
 	 (angle2 (angle-player-to-point player-instance vertex2))
 	 (vertexspan (angle- angle1 angle2)))
     
-    (if (angle>= vertexspan 180.0) ;; check if next to player or behind
-        (return-from is-in-fov nil))
+    (when (angle< vertexspan 180.0) ;; check if next to player or behind
+        
 
-    (let* ((angle1-copy (angle= (make-angle 0) angle1))
-	   (span1 (angle+ (angle-= angle1 (player::angle player-instance)) HALF_FOV))
-	   (span2 (angle- HALF_FOV (angle-= angle2 (player::angle player-instance)))))
-      
-      (if (angle> span1 FOV)
-	  (if (angle>= span1 (angle+ vertexspan FOV))
-	      (return-from is-in-fov nil)
-	      ;; else
-	      (angle= angle1 HALF_FOV))) ;; cutting v1
-
-      (if (angle> span2 FOV)
-	  (if (angle>= span2 (angle+ vertexspan FOV))
-	      (return-from is-in-fov nil)
-	      ;; else
-	      (angle= angle1 (- HALF_FOV)))) ;; cutting v2
-
-      ;; übergabelogik zum renderer
-      )))
+      (let* ((r-angle1 (angle= (make-angle 0) angle1))
+	     (span1 (angle+ (angle-= angle1 (player::angle player-instance)) HALF_FOV))
+	     (span2 (angle- HALF_FOV (angle-= angle2 (player::angle player-instance)))))
+	
+	(if (angle> span1 FOV)
+	    (if (angle< span1 (angle+ vertexspan FOV))
+		(angle= angle1 HALF_FOV) ;; cutting v1
+		nil))
+	
+	(if (angle> span2 FOV)
+	    (if (angle< span2 (angle+ vertexspan FOV))
+		(angle= angle1 (- HALF_FOV)) ;; cutting v2
+		nil))
+		
+	(let ((x1 (angle-to-coordinate angle1))
+	      (x2 (angle-to-coordinate angle2)))
+	  (format t "x1: ~a    x2: ~a    rw-angle1: ~a~%" x1 x2 r-angle1)
+	  (values x1 x2 r-angle1))))))
 
 #| ;; testing
 (defun is-in-fov (player-instance vertex1 vertex2)
@@ -106,19 +117,18 @@
 |#	 
 
    
-(defun render-ssector (bsp-instance subsector-id)
-  (let ((subsector (nth subsector-id (ssectors bsp-instance))))
+(defmethod render-ssector (bsp subsector-id)
+  (format t "looking at subsector~%")
+  (let ((subsector (nth subsector-id (ssectors bsp))))    
     (format t "subsector-id: ~a~%" subsector-id) ;; testing
     (dotimes (i (wad-types::seg-count subsector))
-      (let ((seg (nth (+ (wad-types::first-seg subsector) i) (segs bsp-instance))))
+      (let ((seg (nth (+ (wad-types::first-seg subsector) i) (segs bsp))))
 	(format t "v1id: ~a v2id: ~a~%" (wad-types::v1-id seg) (wad-types::v2-id seg)) ;; testing
-	(is-in-fov (player bsp-instance) (wad-types::v1 seg) (wad-types::v2 seg))
-	;; render logik
-	;; case checking ob im fov
-	;; is-in-fov
-	;; renderer anknüpfung
-	))
-    ))
+	(multiple-value-bind (x1 x2 rw-angle1) (is-in-fov (player bsp) (wad-types::v1 seg) (wad-types::v2 seg))
+	  (format t "x1: ~a    x2: ~a    rw-angle1: ~a    " x1 x2 rw-angle1)
+	  (if (null x1)
+	    nil
+	    (seghandler::classify-segment (engine::seghandler (engine bsp)) seg x1 x2 rw-angle1)))))))
 
 (defun is-point-on-left-side (x-position y-position node)
   (let* ((dx (- x-position (wad-types::x node)))
@@ -127,23 +137,24 @@
            (* dy (wad-types::dy node)))
         0)))
 
-(defun render-bsp-nodes (bsp-instance node-id)
-  (if (logbitp 15 node-id) ;;subsector indetifier checking
-      (render-ssector bsp-instance (logand node-id #x7FFF))
-      ;else
-      (let ((lchild (wad-types::lchild (nth node-id (nodes bsp-instance))))
-	    (rchild (wad-types::rchild (nth node-id (nodes bsp-instance))))		    
-	    (is-on-left (is-point-on-left-side (player::x (player bsp-instance))
-					       (player::y (player bsp-instance))
-					       (nth node-id (nodes bsp-instance)))))
-	(if is-on-left
-	    (progn
-	      (render-bsp-nodes bsp-instance lchild)
-	      (render-bsp-nodes bsp-instance rchild))
-	    ;else
-	    (progn
-       	      (render-bsp-nodes bsp-instance lchild)
-       	      (render-bsp-nodes bsp-instance rchild))))))
+(defmethod render-bsp-nodes (bsp node-id)
+  (when (is-traverse bsp)
+    (if (logbitp 15 node-id) ;;subsector indetifier checking
+	(render-ssector bsp (logand node-id #x7FFF))
+	;; else
+	(let ((lchild (wad-types::lchild (nth node-id (nodes bsp))))
+	      (rchild (wad-types::rchild (nth node-id (nodes bsp))))		    
+	      (is-on-left (is-point-on-left-side (player::x (player bsp))
+						 (player::y (player bsp))
+						 (nth node-id (nodes bsp)))))
+	  (if is-on-left
+	      (progn
+		(render-bsp-nodes bsp lchild)
+		(render-bsp-nodes bsp rchild))
+	      ;; else
+	      (progn
+       		(render-bsp-nodes bsp lchild)
+       		(render-bsp-nodes bsp rchild)))))))
 
-(defun load-bsp (bsp-instance)
-  (render-bsp-nodes bsp-instance (root-node-id bsp-instance)))
+(defmethod load-bsp (bsp)
+  (render-bsp-nodes bsp (root-node-id bsp)))
