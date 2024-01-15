@@ -51,9 +51,13 @@
 
 (defclass CloomEngine ()
   ((engine-map-data :accessor engine-map-data :initarg :engine-map-data)
-   (player     :accessor player     :initarg :player)
-   (bsp        :accessor bsp        :initarg :bsp)
-   (seghandler :accessor seghandler :initarg :seghandler)))
+   (player          :accessor player          :initarg :player)
+   (bsp             :accessor bsp             :initarg :bsp)
+   (seghandler      :accessor seghandler      :initarg :seghandler)
+   (render-engine   :accessor render-engine   :initarg :render-engine)
+   (running         :accessor running         :initform t)
+   (time-delta      :accessor time-delta      :initarg :time-delta :initform 1/60) ;; 60 fps
+   ))
 
 (in-package :bsp)
 
@@ -103,6 +107,26 @@
 (defmethod make-engine (map-name)
   (make-instance 'CloomEngine
 		 :engine-map-data (map-data::map-data-init map-name)))
+
+(defmethod engine-init (engine)
+  (setf (slot-value engine 'player) (player::make-player engine))
+  (setf (slot-value engine 'bsp) (bsp::make-bsp engine))
+  (setf (slot-value engine 'seghandler) (seghandler::make-seghandler engine))
+  ;; (setf (slot-value engine 'render-engine) (render-engine:: ***funktionsname*** engine))
+  
+  engine)
+
+(defmethod update (engine)
+  (player::update (player engine))
+  (seghandler::update (seghandler engine))
+  (bsp::update (bsp engine))
+  (setf (time-delta engine) 1/60) ;; nach clock noch ändern
+
+  )
+
+(defmethod run (engine)
+  ;; driver loop
+  )
 
 
 

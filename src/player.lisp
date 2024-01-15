@@ -4,38 +4,22 @@
 
 (in-package :player)
 
-#| from classes.lisp
-(defclass player ()
-  ((engine  :initarg :engine    :accessor engine)
-   (x       :initarg :x         :accessor x)
-   (y       :initarg :y         :accessor y)
-   (rot     :initarg :rot-speed :accessor rot-speed)
-   (angle   :initarg :angle     :accessor angle)))
+(defmethod get-height (player)
+  (setf (height player) (bsp::get-ssector-height (engine::bsp (engine player)))))
 
-(defun make-player (engine)
-  (let ((start-info (nth 0 (map-data::things (engine::map-data engine)))))
-    (make-instance 'player
-		   :engine engine
-                   :x (wad-types::x start-info)
-                   :y (wad-types::y start-info)
-                   :rot-speed PLAYER_ROT_SPEED
-                   :angle (angle::make-angle (wad-types::angle start-info)))))
-
-|#
-
-(defmethod move ((p player))
+(defmethod move (player)
   ;; bewegungshandling cl::charms
   )
   
 
-(defmethod tick ((p player))
-  (move p)
-  )
+(defmethod update (player)
+  (move player)
+  (get-height player))
   
 
-(defmethod rotate-left ((p player))
+(defmethod rotate-left (player)
   (incf (angle p) (* 0.2 (rot-speed p))))
 
-(defmethod rotate-right ((p player))
+(defmethod rotate-right (player)
   (decf (angle p) (* 0.2 (rot-speed p))))
 

@@ -1,21 +1,14 @@
 ;; main.lisp
-(in-package :engine)
+(require 'uiop)
+(load "~/.sbclrc")
+(ql:quickload :cl-charms)
+(ql:quickload "cloom")
 
-#|
-(defclass CloomEngine ()
-  ((map-data :accessor map-data :initarg :map-data)
-  (player    :accessor player   :initarg :player)
-  (bsp       :accessor bsp      :initarg :bsp)))
+(defun initialize-cloom ()
+  (let ((engine (engine::engine-init (engine::make-engine "E1M1"))))
+    (engine::run engine)))
 
-(defmethod make-engine (map-name)
-  (make-instance 'CloomEngine
-		 :map-data (map-data::map-data-init map-name)))
+(defun main ()
+  (initialize-cloom))
 
-|#
-
-(defmethod engine-init (engine)
-  (setf (slot-value engine 'player) (player::make-player engine))
-  (setf (slot-value engine 'bsp) (bsp::make-bsp engine))
-  (setf (slot-value engine 'seghandler) (seghandler::make-seghandler engine))
-  engine)
-  
+(sb-ext:save-lisp-and-die "cloom.exe" :toplevel #'main :executable t)

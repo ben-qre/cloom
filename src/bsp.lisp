@@ -3,30 +3,23 @@
 
 (in-package :bsp)
 
-#| from classes.lisp
-(defclass bsp ()
-  ((engine          :accessor engine          :initarg :engine)
-   (player          :accessor player          :initarg :player)
-   (nodes           :accessor nodes           :initarg :nodes)
-   (ssectors        :accessor ssectors        :initarg :ssectors)
-   (segs            :accessor segs            :initarg :segs)
-   (root-node-id    :accessor root-node-id)))
-
-(defmethod make-bsp (engine)
-  (let ((bsp (make-instance 'bsp
-                 :engine engine
-                 :player (engine::player engine)
-                 :nodes (map-data::nodes (engine::map-data engine))
-                 :ssectors (map-data::ssectors (engine::map-data engine))
-                 :segs (map-data::segs (engine::map-data engine)))))
-    (setf (root-node-id bsp) (- (length (nodes bsp)) 1))
-    bsp))
-|#
-
 (defmethod update (bsp)
   (setf (is-traverse bsp) t)
-  (load-bsp bsp)
-  )
+  (load-bsp bsp))
+
+(defmethod get-ssector-height (bsp)
+  (let ((ssector-id (root-node-id bsp)))
+    (loop while (zerop (logand ssector-id #x8000)) do
+      (let ((node (nth ssector-id (nodes bsp))))
+	(if (is-point-on-left-side (player::x (player bsp))
+                                   (player::y (player bsp))
+                                   node)
+	    (setf ssector-id (wad-types::rchild node))
+            (setf ssector-id (wad-types::lchild node)))))
+    
+    (let* ((ssector (nth (logand ssector-id #x7FFF) (ssectors bsp)))
+	   (seg (nth (wad-types::first-seg ssector) (segs bsp))))
+      (wad-types::floorheight (wad-types::fsector seg)))))
 
 (defun angle-to-coordinate (angle)
   (format t "angle to coordinate: ~a~%" angle)

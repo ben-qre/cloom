@@ -12,7 +12,6 @@
   (let ((dx (- (wad-types::x vertex) x))
 	(dy (- (wad-types::y vertex) y)))
     (sqrt (+ (* dx dx) (* dy dy)))))
-  
 
 (defmacro with-bindings (seghandler type &body body)
   (let ((conditional-bindings
@@ -84,7 +83,6 @@
 	    ,@conditional-bindings)
        ,@body)))
  
-  
 
 (defmethod init-floor-ceil-clip-height (seghandler)
   (setf (upper-clip seghandler) (loop repeat SCREEN_WIDTH collect -1))
@@ -336,7 +334,9 @@
                          (= (wad-types::lightlevel fsector) (wad-types::lightlevel bsector))
                          (string= (wad-types::middle (wad-types::frontside (wad-types::ldef segment))) "-"))
                     (return-from classify-segment)
-                    (clip-portal-wall seghandler x1 x2))))))))
+                    (clip-portal-wall seghandler x1 x2)))))))
+
+  )
 
 
 
