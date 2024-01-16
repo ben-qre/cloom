@@ -1,5 +1,15 @@
 ;; classes.lisp
 
+(defpackage :clock
+  (:use :common-lisp :settings))
+
+(in-package :clock)
+
+(defclass clock ()
+  ((engine      :accessor engine      :initarg :engine)
+   (last-time   :accessor last-time   :initform (get-internal-real-time))
+   (fps-history :accessor fps-history :initform '())))
+
 (defpackage :bsp
   (:use :common-lisp :wad-types :angle :settings))
 
@@ -56,6 +66,7 @@
    (seghandler      :accessor seghandler      :initarg :seghandler)
    (render-engine   :accessor render-engine   :initarg :render-engine)
    (running         :accessor running         :initform t)
+   (clock           :accessor clock           :initarg :clock)
    (time-delta      :accessor time-delta      :initarg :time-delta :initform 1/60) ;; 60 fps
    ))
 
@@ -70,6 +81,11 @@
                  :segs (map-data::segs (engine::engine-map-data engine)))))
     (setf (root-node-id bsp) (- (length (nodes bsp)) 1))
     bsp))
+
+(in-package :clock)
+
+(defun make-clock (engine)
+  (make-instance 'clock :engine engine))
 
 (in-package :player)
 
@@ -97,10 +113,7 @@
 				   :map-data (engine::engine-map-data engine)
 				   :player (engine::player engine)
 				   :angles (make-angle-table))))
-    seghandler))
-				   
-				   
-				   
+    seghandler))		   
 
 (in-package :engine)
 
@@ -109,28 +122,20 @@
 		 :engine-map-data (map-data::map-data-init map-name)))
 
 (defmethod engine-init (engine)
+  (setf (slot-value engine 'clock) (clock::make-clock engine))
   (setf (slot-value engine 'player) (player::make-player engine))
   (setf (slot-value engine 'bsp) (bsp::make-bsp engine))
   (setf (slot-value engine 'seghandler) (seghandler::make-seghandler engine))
   ;; (setf (slot-value engine 'render-engine) (render-engine:: ***funktionsname*** engine))
-  
   engine)
 
 (defmethod update (engine)
   (player::update (player engine))
   (seghandler::update (seghandler engine))
   (bsp::update (bsp engine))
-  (setf (time-delta engine) 1/60) ;; nach clock noch ändern
-
+  (setf (time-delta engine) (clock::tick (clock engine) 60)) ;; nach clock noch ändern
   )
 
 (defmethod run (engine)
   ;; driver loop
   )
-
-
-
-
-
-
-

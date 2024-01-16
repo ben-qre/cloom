@@ -10,6 +10,7 @@
 	       (:file "src/map-data")
 	       (:file "src/angle")
 	       (:file "src/classes")
+	       (:file "src/clock")
 	       (:file "src/seghandler")
 	       (:file "src/player")
 	       (:file "src/bsp")
