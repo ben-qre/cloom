@@ -2,7 +2,7 @@
   (:use :common-lisp :binary-reader :wad-types)
   (:export :wad-reader :wad-reader-init :get-map-data :wad-reader-close
 	   :get-things :get-linedefs :get-sidedefs :get-vertexes :get-segs :get-ssectors :get-nodes :get-sectors
-	   :get-lump-index))
+	   :get-lump-index :get-color-palette))
 
 (in-package :wad-reader)
 
@@ -90,30 +90,14 @@
 (define-get-map-lump get-nodes    "NODES"    'node      28)
 (define-get-map-lump get-sectors  "SECTORS"  'sector    26)
      
-
-(defun print-sectors (sectors)
-  (dolist (s sectors)
-    (with-slots (wad-types::floorheight
-		 wad-types::floorflat
-		 wad-types::ceilingflat
-		 wad-types::lightlevel) s
-      (format t "fh: ~3a ff: ~8a cf: ~8a ll: ~3a~%"
-	      wad-types::floorheight
-	      wad-types::floorflat
-	      wad-types::ceilingflat
-	      wad-types::lightlevel))))
-
-(defun print-linedefs (linedefs)
-  (dolist (l linedefs)
-    (with-slots (wad-types::v1
-		 wad-types::v2
-		 wad-types::tag
-		 wad-types::sidenum1
-		 wad-types::sidenum2) l
-      (format t "v1: ~5a v2: ~5a tag: ~5a s1: ~5a s2: ~5a~%"
-	      wad-types::v1
-	      wad-types::v2
-	      wad-types::tag
-	      wad-types::sidenum1
-	      wad-types::sidenum2))))
-		 
+(defun get-color-palette (index)
+  (let* ((reader     (wad-reader-init "../data/DOOM1.WAD"))
+	 (file       (slot-value reader 'file))
+	 (lump-index (get-lump-index reader "PLAYPAL"))
+	 (lump       (get-lump-by-index reader lump-index))
+	 (position   (+ (wad-types::filepos lump) (* index (* 256 3)))))
+    (file-position file position)
+    (let (palette)
+      (setf palette (read-value 'binary-element-list file :element-type 'color :length 256))
+      (wad-reader-close reader)
+      palette)))

@@ -1,6 +1,6 @@
 (defpackage :wad-types
   (:use :common-lisp :binary-reader)
-  (:export :*map-lumps* :int16 :uint8 :uint16 :uint32 :ascii-string :binary-element-list :bbox
+  (:export :*map-lumps* :int16 :uint8 :uint16 :uint32 :ascii-string :binary-element-list :bbox :color
 	   :wadinfo :filelump :map-data
            :thing :linedef :sidedef :vertex :seg :subsector :node :sector
 	   :linedef-flag))
@@ -47,6 +47,11 @@
    (yl (int16))
    (xl (int16))
    (xu (int16))))
+
+(define-binary-element-class color
+  ((r (uint8))
+   (g (uint8))
+   (b (uint8))))
 
 
 (define-binary-element-class wadinfo
