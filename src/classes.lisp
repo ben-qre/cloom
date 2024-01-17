@@ -64,11 +64,10 @@
    (player          :accessor player          :initarg :player)
    (bsp             :accessor bsp             :initarg :bsp)
    (seghandler      :accessor seghandler      :initarg :seghandler)
-   (render-engine   :accessor render-engine   :initarg :render-engine)
+   (view-renderer   :accessor view-renderer   :initarg :view-renderer)
    (running         :accessor running         :initform t)
    (clock           :accessor clock           :initarg :clock)
-   (time-delta      :accessor time-delta      :initarg :time-delta :initform 1/60) ;; 60 fps
-   ))
+   (time-delta      :accessor time-delta      :initarg :time-delta :initform 1/60)))
 
 (in-package :bsp)
 
@@ -100,13 +99,6 @@
 
 (in-package :seghandler)
 
-(defun make-angle-table ()
-  (let ((table '()))
-    (dotimes (i (+ SCREEN_WIDTH 1) table)
-      (push (make-angle (* (atan (/ (- HALF_WIDTH i) SCREEN_DIST)) (/ 180 PI))) table))
-    (nreverse table)))
-      
-
 (defun make-seghandler (engine)
   (let ((seghandler (make-instance 'seghandler
 				   :engine engine
@@ -120,22 +112,3 @@
 (defmethod make-engine (map-name)
   (make-instance 'CloomEngine
 		 :engine-map-data (map-data::map-data-init map-name)))
-
-(defmethod engine-init (engine)
-  (setf (slot-value engine 'clock) (clock::make-clock engine))
-  (setf (slot-value engine 'player) (player::make-player engine))
-  (setf (slot-value engine 'bsp) (bsp::make-bsp engine))
-  (setf (slot-value engine 'seghandler) (seghandler::make-seghandler engine))
-  ;; (setf (slot-value engine 'render-engine) (render-engine:: ***funktionsname*** engine))
-  engine)
-
-(defmethod update (engine)
-  (player::update (player engine))
-  (seghandler::update (seghandler engine))
-  (bsp::update (bsp engine))
-  (setf (time-delta engine) (clock::tick (clock engine) 60)) ;; nach clock noch ändern
-  )
-
-(defmethod run (engine)
-  ;; driver loop
-  )

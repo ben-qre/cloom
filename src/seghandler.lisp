@@ -2,6 +2,14 @@
 
 (in-package :seghandler)
 
+(defmethod init-floor-ceil-clip-height (seghandler)
+  (setf (upper-clip seghandler) (make-array SCREEN_WIDTH :initial-element -1))
+  (setf (lower-clip seghandler) (make-array SCREEN_WIDTH :initial-element SCREEN_HEIGHT)))
+
+(defmethod update (seghandler)
+  (init-floor-ceil-clip-height seghandler)
+  (setf (screen-range seghandler) (loop for i from 0 below SCREEN_WIDTH collect i)))
+
 (defun radians (degrees)
   (* degrees (/ pi 180)))
 
@@ -12,6 +20,12 @@
   (let ((dx (- (wad-types::x vertex) x))
 	(dy (- (wad-types::y vertex) y)))
     (sqrt (+ (* dx dx) (* dy dy)))))
+
+(defun make-angle-table ()
+  (let ((table '()))
+    (dotimes (i (+ SCREEN_WIDTH 1) table)
+      (push (make-angle (* (atan (/ (- HALF_WIDTH i) SCREEN_DIST)) (/ 180 PI))) table))
+    (nreverse table)))
 
 (defmacro with-bindings (seghandler type &body body)
   (let ((conditional-bindings
@@ -45,7 +59,7 @@
 	    (fsector (wad-types::fsector segment))
 	    (ldef (wad-types::ldef segment))
 	    (side (wad-types::frontside ldef))
-	    ;; (renderer (view-renderer (engine ,seghandler)))
+	    (renderer (engine::view-renderer (engine ,seghandler)))
 	    (upper-clip (upper-clip ,seghandler))
 	    (lower-clip (lower-clip ,seghandler))
 	    
@@ -60,14 +74,14 @@
 	      (- (wad-types::floorheight fsector) (player::height (player ,seghandler))))	
 	    
 	    ;; scaling factors
-	    (r-normal-angle (angle+ (make-angle (wad-types::angle segment)) 90))
+	    (r-normal-angle (angle+ (make-angle (wad-types::angle segment)) 90.0))
 	    (offset-angle (angle- r-normal-angle (rw-angle1 ,seghandler)))
 	    
-	    (hypo (dist (wad-types::x (player ,seghandler))
-			(wad-types::y (player ,seghandler))
+	    (hypo (dist (player::x (player ,seghandler))
+			(player::y (player ,seghandler))
 			(wad-types::v1 segment)))
 	    
-	    (r-distance (* hypo (cos (radians offset-angle))))
+	    (r-distance (* hypo (cos (radians (angle-value offset-angle)))))
 	    
 	    (r-scale1 (calculate-perspective-scale ,seghandler x1 r-normal-angle r-distance))
 	    (r-scale2 (calculate-perspective-scale ,seghandler x2 r-normal-angle r-distance))
@@ -82,25 +96,16 @@
 	    (draw-wall-y2 0)
 	    ,@conditional-bindings)
        ,@body)))
- 
-
-(defmethod init-floor-ceil-clip-height (seghandler)
-  (setf (upper-clip seghandler) (loop repeat SCREEN_WIDTH collect -1))
-  (setf (lower-clip seghandler) (loop repeat SCREEN_WIDTH collect SCREEN_HEIGHT)))
-
-(defmethod update (seghandler)
-  (init-floor-ceil-clip-height seghandler)
-  (setf (screen-range seghandler) (loop for i from 0 to SCREEN_WIDTH collect i)))
 
 (defmethod calculate-perspective-scale (seghandler x r-normal-angle r-distance)
   (let* ((x-angle (nth x (angles seghandler)))
-         (num (* SCREEN_DIST (cos (radians (- r-normal-angle x-angle (player::angle (player seghandler)))))))
-         (den (* r-distance (cos (radians x-angle))))
+         (num (* SCREEN_DIST (cos (radians (- (angle-value r-normal-angle) (angle-value x-angle) (angle-value (player::angle (player seghandler))))))))
+         (den (* r-distance (cos (radians (angle-value x-angle)))))
          (scale (/ num den)))
     (max MIN_SCALE (min MAX_SCALE scale))))
 
 (defmethod draw-solid-wall (seghandler x1 x2)
-  (format t "drawing solid wall~%")
+  ;; (format t "drawing solid wall~%")
   (with-bindings seghandler "solid"
     (if (< x1 x2)
 	(setf r-scale-step (/ (- r-scale2 r-scale1) (- x1 x2)))
@@ -115,27 +120,27 @@
       
       (when b-draw-ceil
 	(let ((cy1 (+ (aref upper-clip x) 1))
-	      (cy2 (min (- draw-wall-y1 1) (- (aref lower-clip x) 1))))
-	  (format t "cy1: ~a      cy2: ~a~%" cy1 cy2))) ;; testing
-	  ;; (renderer::draw-vline renderer x cy1 cy2 ceil-tex light-level))
+	      (cy2 (floor (min (- draw-wall-y1 1) (- (aref lower-clip x) 1)))))
+	  ;; (charms:write-string-at-point (view-renderer::window renderer) (format nil "cy1: ~a cy2: ~a~%" cy1 cy2) 2 2) ;; testing
+	  (view-renderer::draw-vline renderer x cy1 cy2 ceil-tex light-level)))
       
       (when b-draw-wall
-	(let ((wy1 (max draw-wall-y1 (+ (aref upper-clip x) 1)))
-	      (wy2 (min draw-wall-y2 (- (aref lower-clip x) 1))))
-	  (format t "wy1: ~a      wy2: ~a~%" wy1 wy2))) ;; testing
-	  ;; (renderer::draw-vline renderer x wy1 wy2 wall-tex light-level))
+	(let ((wy1 (floor (max draw-wall-y1 (+ (aref upper-clip x) 1))))
+	      (wy2 (floor (min draw-wall-y2 (- (aref lower-clip x) 1)))))
+	  ;; (format t "wy1: ~a      wy2: ~a~%" wy1 wy2) ;; testing
+	  (view-renderer::draw-vline renderer x wy1 wy2 wall-tex light-level)))
       
       (when b-draw-floor
-	(let ((fy1 (max (+ draw-wall-y2 1) (+ (aref upper-clip x) 1)))
+	(let ((fy1 (floor (max (+ draw-wall-y2 1) (+ (aref upper-clip x) 1))))
 	      (fy2 (- (aref lower-clip x) 1)))
-	  (format t "fy1: ~a      fy2: ~a~%" fy1 fy2))) ;; testing
-	  ;; (renderer::draw-vline renderer x fy1 fy2 floor-tex light-level))
+	  ;; (format t "fy1: ~a      fy2: ~a~%" fy1 fy2) ;; testing
+	  (view-renderer::draw-vline renderer x fy1 fy2 floor-tex light-level)))
       
       (setf wall-y1 (+ wall-y1 wall-y1-step))
       (setf wall-y2 (+ wall-y2 wall-y2-step)))))
 
 (defmethod draw-portal-wall (seghandler x1 x2)
-  (format t "drawing portal wall~%")
+  ;; (format t "drawing portal wall~%")
   (with-bindings seghandler "portal"
     (if (< x1 x2)
 	(setf r-scale-step (/ (- r-scale2 r-scale1) (- x1 x2)))
@@ -205,16 +210,16 @@
 	;; draw ceiling
 	(when b-draw-ceil
 	  (let ((cy1 (+ (aref upper-clip x) 1))
-		(cy2 (min (- draw-wall-y1 1) (- (aref lower-clip x) 1))))
-            ;; (renderer-draw-vline renderer x cy1 cy2 tex-ceil-id light-level))
-	    (format t "cy1: ~a      cy2: ~a~%" cy1 cy2))) ;; testing
+		(cy2 (floor (min (- draw-wall-y1 1) (- (aref lower-clip x) 1)))))
+            (view-renderer::draw-vline renderer x cy1 cy2 ceil-tex light-level)))
+	    ;; (format t "cy1: ~a      cy2: ~a~%" cy1 cy2))) ;; testing
 
 
 	;; draw upper wall
-	(let ((wy1 (max draw-uwall-y1 (+ (aref upper-clip x) 1)))
-              (wy2 (min draw-uwall-y2 (- (aref lower-clip x) 1))))
-	  ;; (renderer-draw-vline renderer x wy1 wy2 upper-wall-texture light-level))
-	  (format t "wy1: ~a      wy2: ~a~%" wy1 wy2) ;; testing
+	(let ((wy1 (floor (max draw-uwall-y1 (+ (aref upper-clip x) 1))))
+              (wy2 (floor (min draw-uwall-y2 (- (aref lower-clip x) 1)))))
+	  (view-renderer::draw-vline renderer x wy1 wy2 u-wall-tex light-level)
+	  ;; (format t "wy1: ~a      wy2: ~a~%" wy1 wy2) ;; testing
 
 	  (when (< (aref upper-clip x) wy2)
 	    (setf (aref upper-clip x) wy2)))
@@ -224,9 +229,9 @@
       ;; draw ceiling alone
       (when b-draw-ceil
 	(let ((cy1 (+ (aref upper-clip x) 1))
-	      (cy2 (min (- draw-wall-y1 1) (- (aref lower-clip x) 1))))
-          ;; (renderer-draw-vline renderer x cy1 cy2 tex-ceil-id light-level))
-	  (format t "cy1: ~a      cy2: ~a~%" cy1 cy2) ;; testing
+	      (cy2 (floor (min (- draw-wall-y1 1) (- (aref lower-clip x) 1)))))
+          (view-renderer::draw-vline renderer x cy1 cy2 ceil-tex light-level)
+	  ;; (format t "cy1: ~a      cy2: ~a~%" cy1 cy2) ;; testing
 	
 	  (when (< (aref upper-clip x) cy2)
 	    (setf (aref upper-clip x) cy2))))
@@ -237,18 +242,18 @@
 	
 	;; draw floor
 	(when b-draw-floor
-	  (let ((fy1 (max (+ draw-wall-y2 1) (+ (aref upper-clip x) 1)))
+	  (let ((fy1 (floor (max (+ draw-wall-y2 1) (+ (aref upper-clip x) 1))))
 		(fy2 (- (aref lower-clip x) 1)))
-            ;; (renderer-draw-vline renderer x fy1 fy2 tex-floor-id light-level))
-	    (format t "fy1: ~a      fy2: ~a~%" fy1 fy2))) ;; testing
+            (view-renderer::draw-vline renderer x fy1 fy2 floor-tex light-level)))
+	    ;; (format t "fy1: ~a      fy2: ~a~%" fy1 fy2))) ;; testing
 
 	(setf draw-lwall-y1 (- portal-y2 1))
 	(setf draw-lwall-y2 wall-y2)
 
-	(let ((wy1 (max draw-lwall-y1 (+ (aref upper-clip x) 1)))
-	      (wy2 (min draw-lwall-y2 (- (aref lower-clip x) 1))))
-	  ;; (renderer-draw-vline renderer x wy1 wy2 lower-wall-texture light-level))
-	  (format t "wy1: ~a      wy2: ~a~%" wy1 wy2) ;; testing
+	(let ((wy1 (floor (max draw-lwall-y1 (+ (aref upper-clip x) 1))))
+	      (wy2 (floor (min draw-lwall-y2 (- (aref lower-clip x) 1)))))
+	  (view-renderer::draw-vline renderer x wy1 wy2 l-wall-tex light-level)
+	  ;; (format t "wy1: ~a      wy2: ~a~%" wy1 wy2) ;; testing
 	      
 	  (when (> (aref lower-clip x) wy1)
 	    (setf (aref lower-clip x) wy1)))
@@ -256,10 +261,10 @@
 	(incf portal-y2 portal-y2-step))
 
       (when b-draw-floor
-	(let ((fy1 (max (+ draw-wall-y2 1) (+ (aref upper-clip x) 1)))
+	(let ((fy1 (floor (max (+ draw-wall-y2 1) (+ (aref upper-clip x) 1))))
               (fy2 (- (aref lower-clip x) 1)))
-	  ;; (renderer-draw-vline renderer x fy1 fy2 tex-floor-id light-level))
-	  (format t "fy1: ~a      fy2: ~a~%" fy1 fy2) ;; testing
+	  (view-renderer::draw-vline renderer x fy1 fy2 floor-tex light-level)
+	  ;; (format t "fy1: ~a      fy2: ~a~%" fy1 fy2) ;; testing
 	
 	  (when (> (aref lower-clip x) (+ draw-wall-y2 1))
             (setf (aref lower-clip x) fy1))))
@@ -270,28 +275,34 @@
 
 
 (defmethod clip-solid-wall (seghandler x-start x-end)
-  (format t "clipping solid wall~%")
+  ;; (format t "clipping solid wall~%")
   (if (screen-range seghandler)
-      (progn 
+      (progn
+	;; (format t "screen-range: ~a~%" (screen-range seghandler))
 	(let* ((curr-wall (loop for i from x-start below x-end collect i))
                (intersection (intersection curr-wall (screen-range seghandler))))
-          (if (= (length intersection) (length curr-wall))
-	      (draw-solid-wall seghandler x-start (- x-end 1))
-	      (progn 
-		(let* ((arr (sort intersection #'<))
-                       (x (first arr))
-                       (x2 (last arr)))
-		  (loop for x1 in arr and x2 in (cdr arr) do
-                    (if (> (- x2 x1) 1)
-			(progn
-			  (draw-solid-wall seghandler x x1)
-			  (setf x x2))))
-		  (draw-solid-wall seghandler x x2))
-		(setf (screen-range seghandler) (set-difference (screen-range seghandler) intersection))))))
+	  (when (not (null intersection))
+	    ;; (format t "curr-wall: ~a~%" curr-wall)
+	    ;; (format t "intersection arr: ~a~%" intersection)
+            (if (= (length intersection) (length curr-wall))
+		(draw-solid-wall seghandler x-start (- x-end 1))
+		(progn 
+		  (let* ((arr (sort intersection #'<))
+			 (x (first arr))
+			 (x2 (last arr)))
+		    (loop for x1 in arr and x2 in (cdr arr) do
+                      (if (> (- x2 x1) 1)
+			  (progn
+			    ;; (format t "passing x: ~a and x1: ~a~%" x x1)
+			    (draw-solid-wall seghandler x x1)
+			    (setf x x2))))
+		    ;; (format t "passing x: ~a and x2: ~a~%" x (first x2))
+		    (draw-solid-wall seghandler x (first x2)))
+		  (setf (screen-range seghandler) (set-difference (screen-range seghandler) intersection)))))))
       (setf (bsp::is-traverse (engine::bsp (engine seghandler))) nil)))
 
 (defmethod clip-portal-wall (seghandler x-start x-end)
-  (format t "clipping portal wall~%")
+  ;; (format t "clipping portal wall~%")
   (let* ((curr-wall (loop for i from x-start below x-end collect i))
          (intersection (intersection curr-wall (screen-range seghandler))))
     (if intersection
@@ -309,7 +320,8 @@
 	      (draw-portal-wall seghandler x (car (last arr))))))))
 
 (defmethod classify-segment (seghandler segment x1 x2 rw-angle1)
-  (format t "classifying segment~%")
+  ;; (format t "classifying segment~%")
+  ;; (format t "got x1: ~a and x2: ~a~%" x1 x2)
   (setf (seg seghandler) segment
         (rw-angle1 seghandler) rw-angle1)
   (when (= x1 x2)
@@ -329,14 +341,12 @@
                 (clip-portal-wall seghandler x1 x2)
                 (return-from classify-segment))
               (progn
-                (if (and (= (wad-types::ceilingflat fsector) (wad-types::ceilingflat bsector))
-                         (= (wad-types::floorflat fsector) (wad-types::floorflat bsector))
+                (if (and (string= (wad-types::ceilingflat fsector) (wad-types::ceilingflat bsector))
+                         (string= (wad-types::floorflat fsector) (wad-types::floorflat bsector))
                          (= (wad-types::lightlevel fsector) (wad-types::lightlevel bsector))
                          (string= (wad-types::middle (wad-types::frontside (wad-types::ldef segment))) "-"))
                     (return-from classify-segment)
-                    (clip-portal-wall seghandler x1 x2)))))))
-
-  )
+                    (clip-portal-wall seghandler x1 x2))))))))
 
 
 

@@ -2,13 +2,16 @@
 (require 'uiop)
 (load "~/.sbclrc")
 (ql:quickload :cl-charms)
-;; (ql:quickload "cloom")
+(ql:quickload "cloom")
 
 (defun initialize-cloom ()
-  (let ((engine (engine::engine-init (engine::make-engine "E1M1"))))
+  (let ((engine (engine::engine-init (engine::make-engine "E1M2"))))
     (engine::run engine)))
 
 (defun main ()
-  (initialize-cloom))
+  
+  (initialize-cloom)
 
-;; (sb-ext:save-lisp-and-die "cloom.exe" :toplevel #'main :executable t)
+  )
+
+(sb-ext:save-lisp-and-die "cloom.exe" :toplevel #'main :executable t)

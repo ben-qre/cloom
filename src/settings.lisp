@@ -13,15 +13,17 @@
 
 
 (defconstant PLAYER_ROT_SPEED 0.12)
-(defconstant PLAYER_HEIGHT 35)
+(defconstant PLAYER_HEIGHT 30.0)
 
 (defconstant FOV 90.0)
 (defconstant HALF_FOV (/ FOV 2))
 
-(defparameter SCREEN_HEIGHT 500)
-(defparameter HALF_HEIGHT 250)
-(defparameter SCREEN_WIDTH 800)
-(defparameter HALF_WIDTH 400)
+
+
+(defparameter SCREEN_HEIGHT 72)
+(defparameter HALF_HEIGHT (/ SCREEN_HEIGHT 2))
+(defparameter SCREEN_WIDTH 223)
+(defparameter HALF_WIDTH (/ SCREEN_WIDTH 2))
 (defparameter SCREEN_DIST (/ HALF_WIDTH (* pi (/ HALF_FOV 180.0))))
 
 

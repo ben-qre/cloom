@@ -4,7 +4,6 @@
 
 (in-package :view-renderer)
 
-
 (defconstant MAX_COLORS 256)
 
 (defclass view-renderer ()
@@ -21,7 +20,12 @@
 
 (defmethod update-window-dimensions (view-renderer)
   (with-slots (winptr width height) view-renderer
-    (charms/ll:getmaxyx winptr height width)))
+    (charms/ll:getmaxyx winptr height width)
+    (setf settings::SCREEN_HEIGHT height)
+    (setf settings::SCREEN_WIDTH width)
+    (setf settings::HALF_HEIGHT (/ settings::SCREEN_HEIGHT 2))
+    (setf settings::HALF_WIDTH (/ settings::SCREEN_WIDTH 2))))
+    
 
 (defun scale (val min1 max1 min2 max2)
   (let ((scale1 (- max1 min1))
@@ -91,12 +95,12 @@
 (defun-grayscale short-grayscale2 "$EFLlv!;,. ")
 (defun-grayscale long-grayscale "$@B%8&WM#oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1{}[]?-_+~<>i!lI;:,^`'. ")
 
-(defun texture-to-random-color (texture-name)
-  (abs (sxhash texture-name)))
+(defun texture-to-random-color (texture-name seed)
+  (abs (+ seed (sxhash texture-name))))
 
 (defmethod draw-vline (view-renderer x y1 y2 texture lightlevel)
   (with-slots (window winptr) view-renderer
-    (let ((color-id (mod (texture-to-random-color texture) MAX_COLORS))
+    (let ((color-id (mod (texture-to-random-color texture 50) MAX_COLORS))
 	  (char     (short-grayscale1 (mod lightlevel 256))))
       (with-color (winptr color-id)
 	(loop for y from y1 to y2
