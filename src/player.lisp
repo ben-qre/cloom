@@ -9,17 +9,18 @@
 
 (defmethod move (player)
   ;; bewegungshandling cl::charms
+  ;; jetzt doch in driver loop
   )
   
 
 (defmethod update (player)
-  (move player)
+  ;; (move player)
   (get-height player))
   
 
 (defmethod rotate-left (player)
-  (incf (angle p) (* 0.2 (rot-speed p))))
+  (incf (angle player) (* 0.2 (PLAYER_ROT_SPEED player))))
 
 (defmethod rotate-right (player)
-  (decf (angle p) (* 0.2 (rot-speed p))))
+  (decf (angle player) (* 0.2 (PLAYER_ROT_SPEED player))))
 

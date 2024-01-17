@@ -67,7 +67,8 @@
   (let ((renderer (make-instance 'view-renderer)))
     (with-slots (window winptr) renderer
       (setf window (charms:initialize))
-      (setf winptr (charms::window-pointer window)))
+      (setf winptr (charms::window-pointer window))
+      (charms:enable-non-blocking-mode window))
     (charms/ll:curs-set charms/ll:false)
     (charms:disable-echoing)
     (charms:enable-raw-input)
